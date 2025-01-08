@@ -1,41 +1,29 @@
 import json
 import boto3
-from decimal import Decimal
 
-# Initialize the DynamoDB resource and table
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('makisam-resume-challenge')
+dyndb = boto3.resource('dynamodb')
+table = dyndb.Table('makisam-resume-table')
 
 def lambda_handler(event, context):
-    try:
-        # Get the current view count
-        response = table.get_item(Key={'id': '0'})
-        if 'Item' in response:
-            views = int(response['Item']['view'])  # Convert Decimal to int
-        else:
-            # Initialize view count if the item doesn't exist
-            views = 0
+    response = table.get_item(
+        Key={'ID': '0'}
+    )
+    view_count = int(response['Item']['website-viewer'])
+    view_count += 1
 
-        # Increment the view count
-        views += 1
-
-        # Update the item with the new view count
-        table.put_item(
-            Item={
-                'id': '0',
-                'view': views
-            }
-        )
-
-        # Return the updated view count
-        return {
-            'statusCode': 200,
-            'body': json.dumps({'views': views})
+    table.put_item(
+        Item={
+            'ID': '0',
+            'website-viewer': view_count
         }
-    except Exception as e:
-        # Handle errors
-        print(f"Error: {e}")
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
+    )
+
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Access-Control-Allow-Origin': '*',  # Allow all origins
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        },
+        'body': json.dumps({'views': view_count})
+    }
